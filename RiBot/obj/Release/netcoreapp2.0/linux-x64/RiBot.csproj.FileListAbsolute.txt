@@ -1,0 +1,11 @@
+c:\users\tarinn\Source\Repos\RiBot\RiBot\bin\Release\netcoreapp2.0\linux-x64\RiBot.deps.json
+c:\users\tarinn\Source\Repos\RiBot\RiBot\bin\Release\netcoreapp2.0\linux-x64\RiBot.runtimeconfig.json
+c:\users\tarinn\Source\Repos\RiBot\RiBot\bin\Release\netcoreapp2.0\linux-x64\RiBot.runtimeconfig.dev.json
+c:\users\tarinn\Source\Repos\RiBot\RiBot\bin\Release\netcoreapp2.0\linux-x64\RiBot.dll
+c:\users\tarinn\Source\Repos\RiBot\RiBot\bin\Release\netcoreapp2.0\linux-x64\RiBot.pdb
+c:\users\tarinn\Source\Repos\RiBot\RiBot\obj\Release\netcoreapp2.0\linux-x64\RiBot.csprojAssemblyReference.cache
+c:\users\tarinn\Source\Repos\RiBot\RiBot\obj\Release\netcoreapp2.0\linux-x64\RiBot.csproj.CoreCompileInputs.cache
+c:\users\tarinn\Source\Repos\RiBot\RiBot\obj\Release\netcoreapp2.0\linux-x64\RiBot.AssemblyInfoInputs.cache
+c:\users\tarinn\Source\Repos\RiBot\RiBot\obj\Release\netcoreapp2.0\linux-x64\RiBot.AssemblyInfo.cs
+c:\users\tarinn\Source\Repos\RiBot\RiBot\obj\Release\netcoreapp2.0\linux-x64\RiBot.dll
+c:\users\tarinn\Source\Repos\RiBot\RiBot\obj\Release\netcoreapp2.0\linux-x64\RiBot.pdb
