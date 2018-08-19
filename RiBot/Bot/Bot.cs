@@ -68,7 +68,7 @@ namespace RiBot
             CleanTimer.Elapsed += OnCleanEvent;
             CleanTimer.AutoReset = true;
             CleanTimer.Enabled = true;
-
+            
             await Task.Delay(-1);
         }
 
@@ -90,6 +90,13 @@ namespace RiBot
             {
                 Config.Instance.ChannelConfigs.RemoveAll(x => x.ChannelId == channelconfig.ChannelId);
             }
+
+            // Add bot to authorised users
+            if (!Config.Instance.AuthUsersIds.Contains(Client.CurrentUser.Id))
+            {
+                Config.Instance.AuthUsersIds.Add(Client.CurrentUser.Id);
+            }
+
             Config.Instance.Write();
         }
 
@@ -232,7 +239,7 @@ namespace RiBot
                 HasReset = true;
             }
 
-            if(DateTime.Now.ToLocalTime().Hour == 4 && !HasReset)
+            if(DateTime.Now.ToLocalTime().Hour == 4 && HasReset)
             {
                 HasReset = false;
             }

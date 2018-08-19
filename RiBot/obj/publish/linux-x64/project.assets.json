@@ -7257,11 +7257,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\users\\tarinn\\Source\\Repos\\RiBot\\RiBot\\RiBot.csproj",
+      "projectUniqueName": "E:\\Git\\RaidBot\\RiBot\\RiBot.csproj",
       "projectName": "RiBot",
-      "projectPath": "c:\\users\\tarinn\\Source\\Repos\\RiBot\\RiBot\\RiBot.csproj",
+      "projectPath": "E:\\Git\\RaidBot\\RiBot\\RiBot.csproj",
       "packagesPath": "C:\\Users\\Tarinn\\.nuget\\packages\\",
-      "outputPath": "c:\\users\\tarinn\\Source\\Repos\\RiBot\\RiBot\\obj\\publish\\linux-x64\\",
+      "outputPath": "E:\\Git\\RaidBot\\RiBot\\obj\\publish\\linux-x64\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
