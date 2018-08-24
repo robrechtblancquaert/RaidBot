@@ -10,6 +10,7 @@ namespace RiBot
 
         public async Task MainAsync()
         {
+            Writer.Initialise();
             Writer.Log("started RiBot");
 
             Bot bot = new Bot();

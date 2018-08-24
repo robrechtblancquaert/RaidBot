@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using RiBot;
 
 namespace RiBot.Channel
 {
@@ -52,21 +52,17 @@ namespace RiBot.Channel
             // Expiration time of the announcement
             DateTime expiresOn = DateTime.Now.AddHours(4);
 
-            // If the command contains the "-h" parameter, change the expiration date accordingly
-            if (announcement.Contains("-h "))
+            // If the commands contains a time argument, change the expiration date of the announcement accordingly
+            List<Argument> arguments = Argument.InString(announcement);
+            if(arguments.Count > 0)
             {
-                if (announcement.LastIndexOf("-h ") == announcement.Length - 8)
+                try
                 {
-                    string newannouncement = announcement.Substring(0, announcement.Length - 8);
-                    string time = announcement.Substring(announcement.Length - 5);
-                    announcement = newannouncement;
-                    try
-                    {
-                        TimeSpan timeSpan = TimeSpan.ParseExact(time, "hh\\:mm", CultureInfo.InvariantCulture);
-                        expiresOn = DateTime.Now.Add(timeSpan);
-                    }
-                    catch (Exception) { }
-                }
+                    string time = arguments.Where(x => x.Key == "time").SingleOrDefault().Value;
+                    TimeSpan timeSpan = TimeSpan.ParseExact(time, "hh\\:mm", CultureInfo.InvariantCulture);
+                    expiresOn = DateTime.Now.Add(timeSpan);
+                    announcement = announcement.Remove(announcement.IndexOf('['), arguments[0].Raw.Length);
+                } catch (Exception) { }
             }
 
             // Post the announcement and add it to the config, with an expiration date

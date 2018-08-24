@@ -50,44 +50,46 @@ namespace RiBot
         private async Task SendHelp(SocketMessage message)
         {
             // A couple of giant strings that contain all the info of the possible commands (discord has max message size, so split them up)
-            string help = @"
-List of commands in DM:
-    | `!help` => Displays this message.
-/
-List of commands in channel:
-    | `x {class}` => Register that you are attending the next raid. Replace `{class}` with an identifiable classname.
+            string help = @"**HELP FOR RAIDBOT**
+__List of commands in DM:__
+-   | `!help` => Displays this message.
+
+__List of commands in channel:__
+-   | `x {class}` => Register that you are attending the next raid. Replace `{class}` with an identifiable classname.
      This means you only need to type as many letters of the class name as to avoid there being any other class names that start with the same letters.
 ```x guardian
 x g
 x r => Will not work because both 'ranger' and 'revenant' start with r```
      Possible values for class: `[Guardian, Revenant, Warrior, Engineer, Ranger, Thief, Elementalist, Mesmer, Necromancer, None]`
      If an invalid class or no class is given, you will be registered under `None`
-    | `!x` => Remove yourself from the attendance list for next raid.
+-   | `!x` => Remove yourself from the attendance list for next raid.
 ";
             await message.Channel.SendMessageAsync(help);
             if (Config.Instance.AuthUsersIds.Contains(message.Author.Id))
             {
-                string adminhelp = @"/
-Commands for admins in DM:
-    | `!config` => Returns a json of the current bot configuration.
-    | `!auth {userid}` => Makes a user an admin. `{userid}` is the id of the user you want to make an admin. Get the id by right-clicking on a user with developer mode enabled.
-    | `!addchannel {channelid}` => Tell the bot to take over a channel, where `{channelid}` is that channel's id. The id is obtained by right clicking on the text-channel when developer mode is enabled.
+                string adminhelp = @"°º¤ø,¸¸,ø¤º°\`°º¤ø,¸,ø¤°º¤ø,¸¸,ø¤º°\`°º¤ø,¸
+
+**ADMIN HELP**
+__Commands for admins in DM:__
+-   | `!config` => Returns a json of the current bot configuration.
+-   | `!auth {userid}` => Makes a user an admin. `{userid}` is the id of the user you want to make an admin. Get the id by right-clicking on a user with developer mode enabled.
+-   | `!addchannel {channelid}` => Tell the bot to take over a channel, where `{channelid}` is that channel's id. The id is obtained by right clicking on the text-channel when developer mode is enabled.
      WARNING: THIS WILL DESTROY ANY MESSAGES IN THAT CHANNEL!
-/
-Commands for admins in channel:
-    | `!border {color}` => Changes the border message to display the given color.
-     Possible values for {color}: `[Blue, Red, Green, OS, Eotm]` (capital letter not required)
-    | `!reset` => Reset attendance and border colour. This command will automatically be called every night at 3.
-    | `!welcome {message}` => Replaces the welcome message by `{message}`
-    | `!announce {announcement} {-h hh:mm}` => Places the `{announcement}` in the channel. Optionall you can add `{-h hh:mm}` to the end to make it expire after a given time, default is 4 hours.
-```!announce something -h 00:05 => Will expire after 5 minutes.
-!announce something one -h 99:30 => Will expire after 99 hours and 30 minutes.
+
+__Commands for admins in channel:__
+-   | `!border {color}` => Changes the border message to display the given color.
+-    Possible values for {color}: `[Blue, Red, Green, OS, Eotm]` (capital letters not required)
+-   | `!reset` => Reset attendance and border colour. This command will automatically be called every night at 3.
+-   | `!welcome {message}` => Replaces the welcome message by `{message}`
+-   | `!announce {announcement} {time}` => Places the `{announcement}` in the channel.
+Optionally you can add `{time}` anywhere in the message in the format of `[time:hh:mm]` to make it expire after a given time, default is 4 hours.
+```!announce something [time:00:05] => Will expire after 5 minutes.
+!announce [time:99:30] something one -h 99:30 => Will expire after 99 hours and 30 minutes.
 !announce something that is two => Will expire after 4 hours.```
 ";
                 await message.Channel.SendMessageAsync(adminhelp);
 
-                string adminhelp_2 = @"/
-    | `!roster {values}` => Assigns a specific roster to attendance, {values} consists of multiple assignements formed as such: `[{class}:{number}]`.
+                string adminhelp_2 = @"-   | `!roster {values}` => Assigns a specific roster to attendance, {values} consists of multiple assignements formed as such: `[{class}:{number}]`.
      Class is assigned the same way as in the 'x {class}` command, so you don't have to type the whole class name.
 ```!roster [g:3][war:3][mes:1]```
 ";

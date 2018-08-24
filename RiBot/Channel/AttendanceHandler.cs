@@ -110,14 +110,13 @@ namespace RiBot.Channel
                 // Find every class that starts with the same letters as given in the command, and add them to the list of possible classes
                 foreach(var en in (Class[])Enum.GetValues(typeof(Class)))
                 {
-                    try
+                    if(en.ToString().Length >= posClass.Length)
                     {
                         if (en.ToString().ToLower().Substring(0, posClass.Length) == posClass)
                         {
                             posClasses.Add(en);
                         }
                     }
-                    catch (Exception) { }
                 }
 
                 // If more than one class is found that matches the command, assign class 'none'
@@ -140,37 +139,24 @@ namespace RiBot.Channel
         /// <param name="command">The command containing the relevant information</param>
         private void CreateRoster(IMessage command)
         {
-            //structure: !roster [g:3][reven:3]...
-
             string content = command.Content;
             // Check valid structure of command
             if (content.Length >= "!roster [g:1]".Length && content.IndexOf(' ') != -1)
             {
-                while(content.IndexOf('[') != -1)
+                var arguments = Argument.InString(content);
+                foreach(var argument in arguments)
                 {
-                    // Get a specif class number assignement from the command
-                    int startIndex = content.IndexOf('[');
-                    int endIndex = content.IndexOf(']');
-                    if (endIndex == -1) return;
-                    string assignement = content.Substring(startIndex, endIndex - startIndex + 1);
-
-                    int middleIndex = assignement.IndexOf(':');
-                    if (middleIndex == -1) return;
-                    string aClass = assignement.Substring(1, middleIndex - 1);
-                    string aNumber = assignement.Substring(middleIndex + 1, assignement.Length - aClass.Length - 3);
-
                     List<Class> posClasses = new List<Class>();
                     // Find every class that starts with the same letters as given in the command, and add them to the list of possible classes
                     foreach (var en in (Class[])Enum.GetValues(typeof(Class)))
                     {
-                        try
+                        if (en.ToString().Length >= argument.Key.Length)
                         {
-                            if (en.ToString().ToLower().Substring(0, aClass.Length) == aClass)
+                            if (en.ToString().ToLower().Substring(0, argument.Key.Length) == argument.Key)
                             {
                                 posClasses.Add(en);
                             }
                         }
-                        catch (Exception) { }
                     }
                     // If more than one class is found ignore this command
                     if (posClasses.Count == 1)
@@ -179,16 +165,14 @@ namespace RiBot.Channel
                         int posNumber = 0;
                         try
                         {
-                            posNumber = int.Parse(aNumber);
-                        } catch(Exception)
+                            posNumber = int.Parse(argument.Value);
+                        }
+                        catch (Exception)
                         {
                             return;
                         }
                         Roster[posClasses[0]] = posNumber;
                     }
-
-                    // Remove the processed assingement from content
-                    content = content.Remove(0, content.IndexOf(']') + 1);
                 }
             }
         }
@@ -226,7 +210,7 @@ namespace RiBot.Channel
 
         public string DefaultMessage()
         {
-            string message = $@"• Attending next raid [0]:";
+            string message = @"• Attending next raid [0]:";
 
             return message;
         }

@@ -35,6 +35,7 @@ namespace RiBot
             Client = new DiscordSocketClient();
             Config.Instance.Read();
             Config.Instance.Write();
+            
 
 #if ! DEBUG
             await Client.LoginAsync(TokenType.Bot, Config.Instance.ReleaseBotKey ); // RELEASE
@@ -237,6 +238,7 @@ namespace RiBot
                 } 
 
                 HasReset = true;
+                Writer.Initialise();
             }
 
             if(DateTime.Now.ToLocalTime().Hour == 4 && HasReset)

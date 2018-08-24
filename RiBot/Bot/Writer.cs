@@ -10,6 +10,18 @@ namespace RiBot
     /// </summary>
     public abstract class Writer
     {
+        // The logfile currenty used
+        public static string LogFile { get; set; }
+
+        /// <summary>
+        /// Create a log file, and a logs directory if it doesn't exist
+        /// </summary>
+        public static void Initialise()
+        {
+            System.IO.Directory.CreateDirectory("logs");
+            LogFile = "log-" + DateTime.Now.ToLocalTime().ToString("d-M-yyyy", CultureInfo.CreateSpecificCulture("nl-BE"));
+    }
+
         /// <summary>
         /// Log a message
         /// </summary>
@@ -20,7 +32,10 @@ namespace RiBot
             if (s.Length == 0) return;
             s = s[0].ToString().ToUpper() + s.Substring(1);
             s.TrimEnd();
-            Console.WriteLine($"[{DateTime.Now.ToLocalTime().ToString("G", CultureInfo.CreateSpecificCulture("nl-BE"))} | RiBot] " + s);
+            string toLog = $"[{DateTime.Now.ToLocalTime().ToString("G", CultureInfo.CreateSpecificCulture("nl-BE"))} | RiBot] " + s;
+            Console.WriteLine(toLog);
+
+            System.IO.File.AppendAllText("logs/" + LogFile, toLog + "\n");
         }
     }
 }
