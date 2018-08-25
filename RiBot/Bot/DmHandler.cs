@@ -82,10 +82,10 @@ __Commands for admins in channel:__
 -   | `!reset` => Reset attendance and border colour. This command will automatically be called every night at 3.
 -   | `!welcome {message}` => Replaces the welcome message by `{message}`
 -   | `!announce {announcement} {time}` => Places the `{announcement}` in the channel.
-Optionally you can add `{time}` anywhere in the message in the format of `[time:hh:mm]` to make it expire after a given time, default is 4 hours.
+Optionally you can add `{time}` anywhere in the message in the format of `[time:hh:mm]` to make it expire after a given time.
 ```!announce something [time:00:05] => Will expire after 5 minutes.
 !announce [time:99:30] something one -h 99:30 => Will expire after 99 hours and 30 minutes.
-!announce something that is two => Will expire after 4 hours.```
+!announce something that is two => Will not expire.```
 ";
                 await message.Channel.SendMessageAsync(adminhelp);
 

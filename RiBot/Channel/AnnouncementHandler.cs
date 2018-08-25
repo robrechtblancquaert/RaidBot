@@ -50,7 +50,7 @@ namespace RiBot.Channel
             }
 
             // Expiration time of the announcement
-            DateTime expiresOn = DateTime.Now.AddHours(4);
+            DateTime expiresOn = DateTime.Now.AddYears(100);
 
             // If the commands contains a time argument, change the expiration date of the announcement accordingly
             List<Argument> arguments = Argument.InString(announcement);

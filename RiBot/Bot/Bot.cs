@@ -114,6 +114,7 @@ namespace RiBot
                 new WelcomeHandler(),
                 new AttendanceHandler(),
                 new BorderHandler(),
+                new ScheduleHandler(),
                 new AnnouncementHandler()
             };
 
@@ -229,19 +230,28 @@ namespace RiBot
             }
 
             // Reset at night
-            if(DateTime.Now.ToLocalTime().Hour == 3 && !HasReset)
+            if(DateTime.Now.ToLocalTime().Hour == 1 && !HasReset)
             {
                 Writer.Log("resetting channel");
                 foreach (var handler in ChannelHandlers)
                 {
-                    handler.Channel.SendMessageAsync("!reset");
+                    // Only reset attendance if there has been a raid
+                    var raidDays = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == handler.Channel.Id).Single().Schedule.Keys.ToArray();
+                    DayOfWeek yesterday = DateTime.Now.AddDays(-1).DayOfWeek;
+                    if(raidDays.Contains(yesterday))
+                    {
+                        handler.Channel.SendMessageAsync("!reset");
+                    }
+                    // Send schedule message to update it to a indicate today
+                    handler.Channel.SendMessageAsync("!schedule");
                 } 
 
                 HasReset = true;
+                // Reinitialise the writer to start a new log file
                 Writer.Initialise();
             }
 
-            if(DateTime.Now.ToLocalTime().Hour == 4 && HasReset)
+            if(DateTime.Now.ToLocalTime().Hour == 2 && HasReset)
             {
                 HasReset = false;
             }

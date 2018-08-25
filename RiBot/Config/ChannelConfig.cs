@@ -19,7 +19,9 @@ namespace RiBot
         public Dictionary<ulong, DateTime> Announcements { get; set; } = new Dictionary<ulong, DateTime>();
         // All the people who are attending, represented by there username and the class the chose
         public Dictionary<string, Class> Usernames { get; set; } = new Dictionary<string, Class>();
-        // The current used roster
+        // The currently used roster
         public Dictionary<Class, int> Roster { get; set; } = new Dictionary<Class, int>();
+        // The currently used schedule
+        public Dictionary<DayOfWeek, TimeSpan> Schedule = new Dictionary<DayOfWeek, TimeSpan>();
     }
 }
