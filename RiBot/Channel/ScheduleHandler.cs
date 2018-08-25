@@ -142,7 +142,6 @@ namespace RiBot.Channel
             }
         }
 
-
         /// <summary>
         /// Formats the current information of this class into a string that can be posted in the channel
         /// </summary>
