@@ -59,8 +59,7 @@ __List of commands in channel:__
      This means you only need to type as many letters of the class name as to avoid there being any other class names that start with the same letters.
 ```x guardian
 x g
-x r => Will not work because both 'ranger' and 'revenant' start with r```
-     Possible values for class: `[Guardian, Revenant, Warrior, Engineer, Ranger, Thief, Elementalist, Mesmer, Necromancer, None]`
+x r => Will not work because both 'ranger' and 'revenant' start with r```     Possible values for class: `[Guardian, Revenant, Warrior, Engineer, Ranger, Thief, Elementalist, Mesmer, Necromancer, None]`
      If an invalid class or no class is given, you will be registered under `None`
 -   | `!x` => Remove yourself from the attendance list for next raid.
 ";
@@ -90,8 +89,12 @@ Optionally you can add `{time}` anywhere in the message in the format of `[time:
                 await message.Channel.SendMessageAsync(adminhelp);
 
                 string adminhelp_2 = @"-   | `!roster {values}` => Assigns a specific roster to attendance, {values} consists of multiple assignements formed as such: `[{class}:{number}]`.
-     Class is assigned the same way as in the 'x {class}` command, so you don't have to type the whole class name.
-```!roster [g:3][war:3][mes:1]```
+     Class is assigned the same way as in the `x {class}` command, so you don't have to type the whole class name.
+```!roster [g:3][war:3][mes:1]```-   | `!schedule {values}` => Sets the default weekly schedule. The strucure of `{values}` is as follows: `[{day}:{hh:mm}]`. Where `{day}` is a day of the week (full name not required).
+`{hh:mm}` is the time of the raid, same as in the `!announce` command, but it can alsoe be `reset` to remove the raidtime from the schedule.
+```!schedule [mo:20:00][tue:20:00][su:18:00][wed:14:00] => sets the schedule for a week with given times.
+!schedule [monday:reset] => removes monday from the schedule.
+```
 ";
                 await message.Channel.SendMessageAsync(adminhelp_2);
             }
