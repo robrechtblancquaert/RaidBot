@@ -12,7 +12,7 @@ namespace RiBot.Channel
     {
         public CommandType MessageType { get; } = CommandType.Schedule;
 
-        public List<string> AcceptedCommands { get; } = new List<string> { "!schedule" };
+        public List<string> AcceptedCommands { get; } = new List<string> { "!schedule", "!reset" };
 
         // A weekly schedule represented by a dict, key: day, value: time of day
         private Dictionary<DayOfWeek, TimeSpan> Schedule = new Dictionary<DayOfWeek, TimeSpan>();
@@ -76,6 +76,8 @@ namespace RiBot.Channel
             {
                 case "!schedule":
                     CreateSchedule(command);
+                    break;
+                case "!reset":
                     break;
             }
         }

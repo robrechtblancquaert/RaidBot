@@ -242,8 +242,6 @@ namespace RiBot
                     {
                         handler.Channel.SendMessageAsync("!reset");
                     }
-                    // Send schedule message to update it to a indicate today
-                    handler.Channel.SendMessageAsync("!schedule");
                 } 
 
                 HasReset = true;
