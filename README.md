@@ -5,7 +5,7 @@
 
 ## Getting Started
 
-Place a copy of the provided data directory in the folder where you run RiBot.dll (RiBot\bin\Debug\netcoreapp2.0). The same effect can be achieved by calling ```Config.Instance.Write()``` once, before you read the config.
+Place a copy of the provided data directory in the folder where you run RiBot.dll, and rename it to ```data``` (RiBot\bin\Debug\netcoreapp2.0\data). The same effect can be achieved by calling ```Config.Instance.Write()``` once, before you read the config.
 If you want to add a new handler for a type of message, add the new type of message to  the ```CommandType``` enum. Then add the new handler  to the handlers list in the ```StartChannelHandler(ChannelConfig channelconfig)``` method in ```Bot.cs```. A handler inherits from IMessageHandler.
 
 ## Configuring data/general.json
