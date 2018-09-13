@@ -14,39 +14,20 @@ namespace RiBot.Channel
 
         public List<string> AcceptedCommands { get; } = new List<string> { "!announce" };
 
-        public async Task<IUserMessage> Handle(IUserMessage message, IMessage command, IMessageChannel channel)
+        public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {
-            // The message currently posted in the channel, may be changed later
-            IUserMessage postedMessage = message;
-
             // User has to be authorised
-            if (!Config.Instance.AuthUsersIds.Contains(command.Author.Id)) return postedMessage;
-
-            string content = command.Content;
-
-            // Check if the command structure is valid, and extract the announcement
-            string announcement = null;
-            if (content.Length > "!announce a".Length && content.IndexOf(' ') != -1)
-            {
-                announcement = "|\t" + content.Substring(content.IndexOf(' ') + 1).ToLower();
-            }
-            if (announcement == null) return postedMessage;
+            if (!isAuthorised) return postedMessage;
 
             // Post the header message
-            if (message == null)
+            postedMessage = await MessageHelper.UpdateMessage(postedMessage, "• Announcements: ");
+
+            string announcement = command.MessageRest;
+
+            // Return if there is no announcement message
+            if(command.MessageRest.Length == 0)
             {
-                postedMessage = await channel.SendMessageAsync($"• Announcements: ");
-            }
-            else
-            {
-                try
-                {
-                    await message.ModifyAsync(x => x.Content = $"• Announcements: ");
-                }
-                catch (Exception)
-                {
-                    postedMessage = await channel.SendMessageAsync($"• Announcements: ");
-                }
+                return postedMessage;
             }
 
             // Expiration time of the announcement
@@ -66,8 +47,8 @@ namespace RiBot.Channel
             }
 
             // Post the announcement and add it to the config, with an expiration date
-            var postedAnnouncement = channel.SendMessageAsync(announcement).Result;
-            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single().Announcements.Add((ulong)postedAnnouncement.Id, expiresOn);
+            var postedAnnouncement = command.Channel.SendMessageAsync(announcement).Result;
+            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Announcements.Add((ulong)postedAnnouncement.Id, expiresOn);
             Config.Instance.Write();
 
             return postedMessage;

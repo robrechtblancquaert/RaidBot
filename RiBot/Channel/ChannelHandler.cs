@@ -41,7 +41,7 @@ namespace RiBot.Channel
             var messages = await Channel.GetMessagesAsync().Flatten();
             foreach (var m in messages)
             {
-                Handle(m);
+                Handle(Command.FormCommand(m));
             }
 
         }
@@ -50,37 +50,39 @@ namespace RiBot.Channel
         /// Handle a message
         /// </summary>
         /// <param name="m">The message to handle</param>
-        public async void Handle(IMessage m)
+        public async void Handle(Command command)
         {
-            // Do not handle the message if it is from the bot itself, unless it is a request to reset
-            if (m.Author.Id != BotId || m.Content == "!reset")
-            {
-                // Extract the command from the received message
-                string command = (m.Content.IndexOf(' ') == -1) ? m.Content.ToLower() : m.Content.Substring(0, m.Content.IndexOf(' ')).ToLower();
+            // Is the author authorised in this channel
+            bool authorised = Config.Instance.GetChannelConfig(this.Channel).AuthUsersIds.Contains(command.Author.Id) || (command.Author.Id == this.BotId);
 
+            // Do not handle the message if it is from the bot itself, unless it is a request to reset
+            if (command.Author.Id != BotId || command.FirstWord == "!reset" || command.FirstWord == "!daily")
+            {
                 // Let each handler handle the received command
                 foreach (var handler in MessageHandlers)
                 {
-                    if (handler.AcceptedCommands.Contains(command))
+                    if (handler.AcceptedCommands.Contains(command.FirstWord))
                     {
-                        var postedMessage = await handler.Handle(PostedMessages.Where(x => x.Key == handler.MessageType).Single().Value, m, Channel);
+                        var postedMessage = await handler.Handle(PostedMessages.Where(x => x.Key == handler.MessageType).Single().Value, command, authorised);
                         PostedMessages[handler.MessageType] = postedMessage;
 
                     }
                 }
 
-                // Update the config gile with the new messages
+                // Update the config file with the new messages
                 Dictionary<CommandType, ulong> forConfig = new Dictionary<CommandType, ulong>();
                 foreach (var x in PostedMessages)
                 {
                     forConfig.Add(x.Key, x.Value.Id);
                 }
-                Config.Instance.ChannelConfigs.Where(x => x.ChannelId == Channel.Id).Single().PostedMessages = forConfig;
+                Config.Instance.ChannelConfigs.Where(x => x.ChannelId == Channel.Id).Single().ChannelData.PostedMessages = forConfig;
                 Config.Instance.Write();
 
                 // Delete the message after it has been handled
-                List<IMessage> toDelete = new List<IMessage>();
-                toDelete.Add(m);
+                List<IMessage> toDelete = new List<IMessage>
+                {
+                    command.Message
+                };
                 await Channel.DeleteMessagesAsync(toDelete);
             }
         }

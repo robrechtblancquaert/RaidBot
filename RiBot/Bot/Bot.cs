@@ -15,10 +15,10 @@ namespace RiBot
     public class Bot
     {
         // The client of discord
-        private static DiscordSocketClient Client { get; set; }
+        public static DiscordSocketClient Client { get; set; }
         // A list of each of the channel handlers this class has started
         private static List<ChannelHandler> ChannelHandlers = new List<ChannelHandler>();
-        // A timer to clean all channels up
+        // A timer to periodically clean all channels up
         private static Timer CleanTimer;
         // Boolean to indicate if the daily reset has run
         private static bool HasReset = false;
@@ -38,9 +38,9 @@ namespace RiBot
             
 
 #if ! DEBUG
-            await Client.LoginAsync(TokenType.Bot, Config.Instance.ReleaseBotKey ); // RELEASE
+            await Client.LoginAsync(TokenType.Bot, Config.Instance.General.ReleaseBotKey ); // RELEASE
 #else
-            await Client.LoginAsync(TokenType.Bot, Config.Instance.TestBotKey); // TEST
+            await Client.LoginAsync(TokenType.Bot, Config.Instance.General.TestBotKey); // TEST
 #endif
             await Client.StartAsync();
 
@@ -51,16 +51,19 @@ namespace RiBot
             DmHandler dmHandler = new DmHandler();
             Client.MessageReceived += async message =>
             {
-                if(message.Author.Id != Client.CurrentUser.Id) Writer.Log("received message from " + message.Author + ": " + message.Content);
-
                 var handler = ChannelHandlers.Where(x => x.Channel.Id == message.Channel.Id).SingleOrDefault();
                 if (handler != null)
                 {
-                    handler.Handle(message);
+                    if (message.Author.Id != Client.CurrentUser.Id) Writer.Log("received message from " + message.Author + ": " + message.Content);
+                    handler.Handle(Command.FormCommand(message));
                 }
                 else
                 {
-                    await dmHandler.Handle(message);
+                    if ((message.Channel.GetType() == typeof(SocketDMChannel)) && (message.Author.Id != Client.CurrentUser.Id))
+                    {
+                        Writer.Log("received dm from " + message.Author + ": " + message.Content);
+                        await dmHandler.Handle(Command.FormCommand(message));
+                    }
                 }
             };
 
@@ -69,7 +72,7 @@ namespace RiBot
             CleanTimer.Elapsed += OnCleanEvent;
             CleanTimer.AutoReset = true;
             CleanTimer.Enabled = true;
-            
+
             await Task.Delay(-1);
         }
 
@@ -92,12 +95,6 @@ namespace RiBot
                 Config.Instance.ChannelConfigs.RemoveAll(x => x.ChannelId == channelconfig.ChannelId);
             }
 
-            // Add bot to authorised users
-            if (!Config.Instance.AuthUsersIds.Contains(Client.CurrentUser.Id))
-            {
-                Config.Instance.AuthUsersIds.Add(Client.CurrentUser.Id);
-            }
-
             Config.Instance.Write();
         }
 
@@ -105,8 +102,9 @@ namespace RiBot
         /// Start a channel handler for a specific channel in discord
         /// </summary>
         /// <param name="channelconfig">The representation of a channel in discord</param>
+        /// <param name="channel">If you already have an instanc eof the channel to handle you can pass it as a parameter</param>
         /// <returns>A bool depicting if the channel handler could be started</returns>
-        public async static Task<bool> StartChannelHandler(ChannelConfig channelconfig)
+        public async static Task<bool> StartChannelHandler(ChannelConfig channelconfig, IMessageChannel channel = null)
         {
             // Create a handler for each type of message the channel should be able to process
             var handlers = new List<IMessageHandler>
@@ -119,21 +117,28 @@ namespace RiBot
             };
 
             // Try to get the channel object from  the channel id in the config
-            var channel = Client.GetChannel(channelconfig.ChannelId) as IMessageChannel;
+            if(channel == null)
+            {
+                channel = Client.GetChannel(channelconfig.ChannelId) as IMessageChannel;
+            }
+            else
+            {
+                channelconfig = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single();
+            }
 
             // If the client couldn't get the channel, return false
             if(channel == null)
             {
-                return false;
+                Config.Instance.DeleteConfig(channelconfig);
             }
             
             // Get all the messages that have been posted to the channel, remove any that have been deleted
             Dictionary<CommandType, IUserMessage> postedMessages = new Dictionary<CommandType, IUserMessage>();
-            if (channelconfig.PostedMessages == null) channelconfig.PostedMessages = new Dictionary<CommandType, ulong>();
+            if (channelconfig.ChannelData.PostedMessages == null) channelconfig.ChannelData.PostedMessages = new Dictionary<CommandType, ulong>();
 
             // Check if a message has been deleted
             List<CommandType> toRemove = new List<CommandType>();
-            foreach (var m in channelconfig.PostedMessages)
+            foreach (var m in channelconfig.ChannelData.PostedMessages)
             {
                 IUserMessage userMessage = null;
                 try
@@ -153,7 +158,7 @@ namespace RiBot
             }
             foreach (var type in toRemove)
             {
-                Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channelconfig.ChannelId).Single().PostedMessages.Remove(type);
+                Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channelconfig.ChannelId).Single().ChannelData.PostedMessages.Remove(type);
             }
             Config.Instance.Write();
 
@@ -166,7 +171,7 @@ namespace RiBot
                     {
                         IUserMessage userMessage = await channel.SendMessageAsync(h.DefaultMessage());
                         postedMessages.Add(h.MessageType, userMessage);
-                        Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channelconfig.ChannelId).Single().PostedMessages.Add(h.MessageType, userMessage.Id);
+                        Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channelconfig.ChannelId).Single().ChannelData.PostedMessages.Add(h.MessageType, userMessage.Id);
                     }
                 }
                 catch (Exception) { }
@@ -181,6 +186,7 @@ namespace RiBot
             return true;
         }
 
+
         /// <summary>
         /// Clean up a channel
         /// </summary>
@@ -188,7 +194,7 @@ namespace RiBot
         private async static void Clean(IMessageChannel channel)
         {
             // Remove all announcements that have expired from both the channel and the config (where necessary)
-            var announcements = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single().Announcements;
+            var announcements = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single().ChannelData.Announcements;
             List<ulong> toRemove = new List<ulong>();
             foreach (var a in announcements)
             {
@@ -225,8 +231,14 @@ namespace RiBot
             foreach (var channelconfig in Config.Instance.ChannelConfigs)
             {
                 var channel = Client.GetChannel(channelconfig.ChannelId) as IMessageChannel;
-
-                Clean(channel);
+                if(channel != null)
+                {
+                    Clean(channel);
+                }
+                else
+                {
+                    Config.Instance.DeleteConfig(channelconfig);
+                }
             }
 
             // Reset at night
@@ -235,13 +247,21 @@ namespace RiBot
                 Writer.Log("resetting channel");
                 foreach (var handler in ChannelHandlers)
                 {
-                    // Only reset attendance if there has been a raid
-                    var raidDays = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == handler.Channel.Id).Single().Schedule.Keys.ToArray();
-                    DayOfWeek yesterday = DateTime.Now.AddDays(-1).DayOfWeek;
-                    if(raidDays.Contains(yesterday))
+                    try
                     {
-                        handler.Channel.SendMessageAsync("!reset");
+                        // Only reset attendance if there has been a raid
+                        var raidDays = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == handler.Channel.Id).Single().ChannelData.Schedule.Keys.ToArray();
+                        DayOfWeek yesterday = DateTime.Now.AddDays(-1).DayOfWeek;
+                        if (raidDays.Contains(yesterday))
+                        {
+                            handler.Channel.SendMessageAsync("!reset");
+                        }
                     }
+                    catch (Exception) { }
+                    
+
+                    // Message that reset has passed for handlers that need it
+                    handler.Channel.SendMessageAsync("!daily");
                 } 
 
                 HasReset = true;

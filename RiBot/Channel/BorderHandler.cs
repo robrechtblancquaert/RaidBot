@@ -15,46 +15,28 @@ namespace RiBot.Channel
         // List of possible values for border
         private List<string> BorderColours { get; } = new List<string> { "Blue", "Red", "Green", "None", "OS", "EotM" };
 
-        public async Task<IUserMessage> Handle(IUserMessage message, IMessage command, IMessageChannel channel)
+        public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {
-            IUserMessage postedMessage = message;
+            if (!isAuthorised) return postedMessage;
 
-            if (!Config.Instance.AuthUsersIds.Contains(command.Author.Id)) return postedMessage;
-
-            string content = command.Content;
-
-            // Check if the structure of the command is correct, "!reset" command will give an invalid structure, and so the border will correctly be set to "None"
-            string border = null;
-            if (content.Length > "!border b".Length && content.IndexOf(' ') != -1)
+            string border = "None";
+            if(command.MessageRest.Length != 0)
             {
-                string borderVal = content.Substring(content.IndexOf(' ') + 1).ToLower();
-                border = BorderColours.Where(x => x.ToLower() == borderVal).SingleOrDefault();
-            }
-            if (border == null) border = "None";
-
-            // Post the message
-            if (message == null)
-            {
-                postedMessage = await channel.SendMessageAsync($"• Border: {border}");
-            }
-            else
-            {
-                try
+                List<string> posBorders = MessageHelper.PossibleValues(BorderColours, command.MessageRest);
+                if(posBorders.Count() == 1)
                 {
-                    await message.ModifyAsync(x => x.Content = $"• Border: {border}");
-                }
-                catch (Exception)
-                {
-                    postedMessage = await channel.SendMessageAsync($"• Border: {border}");
+                    border = posBorders[0];
                 }
             }
+
+            await MessageHelper.UpdateMessage(postedMessage, $"• Border: {border}");
 
             return postedMessage;
         }
 
         public string DefaultMessage()
         {
-            return $"• Border: None";
+            return "• Border: None";
         }
     }
 }

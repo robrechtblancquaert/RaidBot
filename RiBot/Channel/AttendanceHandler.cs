@@ -19,52 +19,24 @@ namespace RiBot.Channel
         // Dict of the ammount of people wanted per class
         private Dictionary<Class, int> Roster { get; set; }
 
-        public async Task<IUserMessage> Handle(IUserMessage message, IMessage command, IMessageChannel channel)
+        public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {
             // Get the current attending users from the config file
-            var configUsernames = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single().Usernames;
-            if(configUsernames != null)
-            {
-                this.Usernames = configUsernames;
-            } else
-            {
-                this.Usernames = new Dictionary<string, Class>();
-            }
+            var configUsernames = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Usernames;
+            this.Usernames = configUsernames ?? new Dictionary<string, Class>();
 
             // Get the curent roster from the config file
-            var configRoster = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single().Roster;
-            if(configRoster != null)
-            {
-                this.Roster = configRoster;
-            } else
-            {
-                this.Roster = new Dictionary<Class, int>();
-            }
+            var configRoster = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Roster;
+            this.Roster = configRoster ?? new Dictionary<Class, int>();
 
-            HandleCommand(command);
-
-            IUserMessage postedMessage = message;
+            HandleCommand(command, isAuthorised);
 
             // Post the message
-            if (message == null)
-            {
-                postedMessage = await channel.SendMessageAsync(FormMessage());
-            }
-            else
-            {
-                try
-                {
-                    await message.ModifyAsync(x => x.Content = FormMessage());
-                }
-                catch (Exception)
-                {
-                    postedMessage = await channel.SendMessageAsync(FormMessage());
-                }
-            }
+            await MessageHelper.UpdateMessage(postedMessage, FormMessage());
 
             // Update the config file
-            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single().Usernames = Usernames;
-            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single().Roster = Roster;
+            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Usernames = Usernames;
+            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Roster = Roster;
             Config.Instance.Write();
 
             return postedMessage;
@@ -74,11 +46,11 @@ namespace RiBot.Channel
         /// Calls the appropriate method for each command
         /// </summary>
         /// <param name="command">The command to handle</param>
-        private void HandleCommand(IMessage command)
+        /// <param name="isAuthorised">If the user is authorised</param>
+        private void HandleCommand(Command command, bool isAuthorised)
         {
             // Extract the relevant portion of the command
-            string commandString = (command.Content.IndexOf(' ') == -1) ? command.Content.ToLower() : command.Content.Substring(0, command.Content.IndexOf(' ')).ToLower();
-            switch (commandString)
+            switch (command.FirstWord)
             {
                 case "x":
                     AddUsername(command);
@@ -87,10 +59,10 @@ namespace RiBot.Channel
                     Usernames.Remove(command.Author.Username);
                     break;
                 case "!reset":
-                    if (Config.Instance.AuthUsersIds.Contains(command.Author.Id)) Usernames.Clear();
+                    if (isAuthorised) Usernames.Clear();
                     break;
                 case "!roster":
-                    CreateRoster(command);
+                    if (isAuthorised) CreateRoster(command);
                     break;
             }
         }
@@ -99,34 +71,18 @@ namespace RiBot.Channel
         /// Adds a username, and their chosen class to the list of attending users
         /// </summary>
         /// <param name="command">The command containing the relevant information</param>
-        private void AddUsername(IMessage command)
+        private void AddUsername(Command command)
         {
-            string content = command.Content;
-            List<Class> posClasses = new List<Class>();
-            // Check valid structure of command
-            if (content.Length >= "x g".Length && content.IndexOf(' ') != -1)
-            {
-                string posClass = content.Substring(content.IndexOf(' ') + 1).ToLower();
-                // Find every class that starts with the same letters as given in the command, and add them to the list of possible classes
-                foreach(var en in (Class[])Enum.GetValues(typeof(Class)))
-                {
-                    if(en.ToString().Length >= posClass.Length)
-                    {
-                        if (en.ToString().ToLower().Substring(0, posClass.Length) == posClass)
-                        {
-                            posClasses.Add(en);
-                        }
-                    }
-                }
+            if (command.MessageRest.Length == 0) {
+                Usernames[command.Author.Username] = Class.None;
+                return;
+            }
+            List<Class> posClasses = MessageHelper.PossibleValues<Class>(command.MessageRest);
 
-                // If more than one class is found that matches the command, assign class 'none'
-                if(posClasses.Count == 1)
-                {
-                    Usernames[command.Author.Username] = posClasses[0];
-                } else
-                {
-                    Usernames[command.Author.Username] = Class.None;
-                }
+            // If more than one class is found that matches the command, assign class 'none'
+            if(posClasses.Count == 1)
+            {
+                Usernames[command.Author.Username] = posClasses[0];
             } else
             {
                 Usernames[command.Author.Username] = Class.None;
@@ -137,42 +93,27 @@ namespace RiBot.Channel
         /// Updates the roster with the given values
         /// </summary>
         /// <param name="command">The command containing the relevant information</param>
-        private void CreateRoster(IMessage command)
+        private void CreateRoster(Command command)
         {
-            string content = command.Content;
-            // Check valid structure of command
-            if (content.Length >= "!roster [g:1]".Length && content.IndexOf(' ') != -1)
+            if (command.MessageRest.Length == 0) return;
+            var arguments = Argument.InString(command.MessageRest);
+            foreach(var argument in arguments)
             {
-                var arguments = Argument.InString(content);
-                foreach(var argument in arguments)
+                List<Class> posClasses = MessageHelper.PossibleValues<Class>(argument.Key);
+                // If more than one class is found ignore this command
+                if (posClasses.Count == 1)
                 {
-                    List<Class> posClasses = new List<Class>();
-                    // Find every class that starts with the same letters as given in the command, and add them to the list of possible classes
-                    foreach (var en in (Class[])Enum.GetValues(typeof(Class)))
+                    // try to convert the number given in command to an int
+                    int posNumber = 0;
+                    try
                     {
-                        if (en.ToString().Length >= argument.Key.Length)
-                        {
-                            if (en.ToString().ToLower().Substring(0, argument.Key.Length) == argument.Key)
-                            {
-                                posClasses.Add(en);
-                            }
-                        }
+                        posNumber = int.Parse(argument.Value);
                     }
-                    // If more than one class is found ignore this command
-                    if (posClasses.Count == 1)
+                    catch (Exception)
                     {
-                        // try to convert the number given in command to an int
-                        int posNumber = 0;
-                        try
-                        {
-                            posNumber = int.Parse(argument.Value);
-                        }
-                        catch (Exception)
-                        {
-                            return;
-                        }
-                        Roster[posClasses[0]] = posNumber;
+                        return;
                     }
+                    Roster[posClasses[0]] = posNumber;
                 }
             }
         }
