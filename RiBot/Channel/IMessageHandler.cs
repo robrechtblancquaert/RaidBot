@@ -16,6 +16,7 @@ namespace RiBot.Channel
         /// The type this class is responisble for
         /// </summary>
         CommandType MessageType { get; }
+
         /// <summary>
         /// The commands this class accepts
         /// </summary>
@@ -25,10 +26,10 @@ namespace RiBot.Channel
         /// Handle a command
         /// </summary>
         /// <param name="message">The current message posted by this class in  the channel</param>
-        /// <param name="command">The message received by the bot</param>
-        /// <param name="channel">The channel in which the command was received</param>
+        /// <param name="command">The message received by the bot, stored in command object</param>
+        /// <param name="isAuthorised">True if user is authorised in the channel, false otherwise</param>
         /// <returns>An updated message posted in the channel</returns>
-        Task<IUserMessage> Handle(IUserMessage message, IMessage command, IMessageChannel channel);
+        Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false);
 
         /// <summary>
         /// Creates a default message, to be posted in the channel if there is no current posted message

@@ -17,32 +17,31 @@ namespace RiBot
         /// Handle a message
         /// </summary>
         /// <param name="message">The message to handle</param>
-        public async Task Handle(SocketMessage message)
+        public async Task Handle(Command command)
         {
-            if (message.Author.IsBot) return;
-            if (message.Channel.GetType() != typeof(SocketDMChannel)) return;
-            string command = message.Content;
-            if (command.IndexOf(' ') != -1) command = command.Substring(0, command.IndexOf(' '));
-            switch (command)
+            if (command.Author.IsBot) return;
+            if (command.Channel.GetType() != typeof(SocketDMChannel)) return;
+            switch (command.FirstWord)
             {
-                case "!help":
-                    await SendHelp(message);
+                /*case "!help":
+                    await SendHelp(command);
                     break;
                 case "!config":
-                    await SendConfig(message);
+                    await SendConfig(command);
                     break;
                 case "!auth":
-                    await AuthId(message);
-                    break;
+                    await AuthId(command);
+                    break;*/
                 case "!addchannel":
-                    await AddChannel(message);
+                    await AddChannel(command);
                     break;
                 default:
-                    await message.Channel.SendMessageAsync("Unrecognised command");
+                    await command.Channel.SendMessageAsync("Uh oh! I can't do that! Did you mean to send that command in a channel?");
                     break;
             }
         }
 
+        /*
         /// <summary>
         /// Sends a list of commands to the person sending the message, more commands if that person is an authorised user
         /// </summary>
@@ -146,40 +145,45 @@ Optionally you can add `{time}` anywhere in the message in the format of `[time:
                     await message.Channel.SendMessageAsync("Invalid id");
                 }
             }
-        }
+        }*/ // Move these to a channel handler
 
         /// <summary>
         /// If the user is authorised, adds another channel to be handled by the bot to the config and start handler for it
         /// </summary>
         /// <param name="message">The message received by the bot</param>
-        private async Task AddChannel(SocketMessage message)
+        private async Task AddChannel(Command command)
         {
-            if (!Config.Instance.AuthUsersIds.Contains(message.Author.Id)) return;
-            string id = null;
-            if ((message.Content.IndexOf(' ') != -1) && message.Content.Length > "!addchannel 1".Length) id = message.Content.Substring(message.Content.IndexOf(' ') + 1);
-            if (id == null)
+            ulong guildId = 0;
+            try
             {
-                await message.Channel.SendMessageAsync("Invalid id");
+                guildId = Convert.ToUInt64(command.MessageRest);
             }
-            else
+            catch (FormatException)
             {
-                ulong channelId = 0;
-                try
-                {
-                    channelId = Convert.ToUInt64(id);
-                }
-                catch (FormatException)
-                {
-                    await message.Channel.SendMessageAsync("Invalid id");
-                }
-                var channelconfig = new ChannelConfig()
-                {
-                    ChannelId = channelId
-                };
-                Config.Instance.ChannelConfigs.Add(channelconfig);
-                Config.Instance.Write();
-                await Bot.StartChannelHandler(channelconfig);
+                await command.Channel.SendMessageAsync("Invalid id");
             }
+
+            // Test if that guild already has a channel
+            if (Bot.Client.GetGuild(guildId).Channels.Where(x => Config.Instance.ChannelConfigs.Where(y => y.ChannelId == x.Id).SingleOrDefault() != null).SingleOrDefault() != null)
+            {
+                await command.Channel.SendMessageAsync("Channel already exists in that guild");
+                return;
+            }
+
+            var channel = await Bot.Client.GetGuild(guildId).CreateTextChannelAsync($"RaidBot{DateTime.Now.ToShortDateString()}");
+
+            var channelconfig = new ChannelConfig()
+            {
+                ChannelId = channel.Id,
+                AuthUsersIds = new List<ulong>()
+                {
+                    command.Author.Id
+                }
+            };
+            Config.Instance.General.ChannelIds.Add(channel.Id);
+            Config.Instance.ChannelConfigs.Add(channelconfig);
+            Config.Instance.Write();
+            await Bot.StartChannelHandler(null, channel);
         }
     }
 }

@@ -11,39 +11,29 @@ namespace RiBot.Channel
         public CommandType MessageType { get; } = CommandType.Welcome;
         public List<string> AcceptedCommands { get; } = new List<string> { "!welcome" };
 
-        public async Task<IUserMessage> Handle(IUserMessage message, IMessage command, IMessageChannel channel)
+        public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {
-            IUserMessage postedMessage = message;
+            if (!isAuthorised) return postedMessage;
 
-            if (!Config.Instance.AuthUsersIds.Contains(command.Author.Id)) return postedMessage;
-
-            string content = command.Content;
-
-            // Check that the command has the correct structure
-            string welcome = null;
-            if (content.Length > "!welcome a".Length && content.IndexOf(' ') != -1)
-            {
-                welcome = content.Substring(content.IndexOf(' ') + 1).ToLower();
-            }
-            if (welcome == null) return postedMessage;
+            if (command.MessageRest.Length == 0) return postedMessage;
 
             // Create and post the embeded message
             var eb = new EmbedBuilder();
-            eb.WithDescription(welcome);
+            eb.WithDescription(command.MessageRest);
             eb.Color = Color.Green;
-            if (message == null)
+            if (postedMessage == null)
             {
-                postedMessage = await channel.SendMessageAsync("***Raid Attendance***", false, eb);
+                postedMessage = await command.Channel.SendMessageAsync("***Raid Attendance***", false, eb);
             }
             else
             {
                 try
                 {
-                    await message.ModifyAsync(x => { x.Embed = eb.Build(); x.Content = "***Raid Attendance***"; });
+                    await postedMessage.ModifyAsync(x => { x.Embed = eb.Build(); x.Content = "***Raid Attendance***"; });
                 }
                 catch (Exception)
                 {
-                    postedMessage = await channel.SendMessageAsync("***Raid Attendance***", false, eb);
+                    postedMessage = await command.Channel.SendMessageAsync("***Raid Attendance***", false, eb);
                 }
             }
 
