@@ -5,12 +5,12 @@
 
 ## Getting Started
 
-Place a copy of the provided data directory in the folder where you run RiBot.dll (RiBot\bin\Debug\netcoreapp2.0). The same effect can be achieved by calling Config.Instance.Write() once, before you read the config.
-If you want to add a new handler for a type of message, add the new type of message to  the CommandType enum. Then add the new handler  to the handlers list in the StartChannelHandler(ChannelConfig channelconfig) method in Bot.cs. A handler inherits from IMessageHandler.
+Place a copy of the provided data directory in the folder where you run RiBot.dll (RiBot\bin\Debug\netcoreapp2.0). The same effect can be achieved by calling ```Config.Instance.Write()``` once, before you read the config.
+If you want to add a new handler for a type of message, add the new type of message to  the ```CommandType``` enum. Then add the new handler  to the handlers list in the ```StartChannelHandler(ChannelConfig channelconfig)``` method in ```Bot.cs```. A handler inherits from IMessageHandler.
 
 ## Configuring data/general.json
 
-The bot needs some information to run, like it's Discord Bot Key, and a key to use in a debug enviroment. You can get the key for a bot from an application you can create on the Discord developer portal.
+The bot needs some information to run, like it's Discord Bot Key, and a key to use in a debug enviroment. You can get the key for a bot from an application you can create on the Discord developer portal. Put this information in data/general.json.
 * *TestBotKey* - The key to use for a bot when the application runs in Debug mode
 * *ReleaseBotKey* - The key to use for a bot when the application runs in Release mode
 
