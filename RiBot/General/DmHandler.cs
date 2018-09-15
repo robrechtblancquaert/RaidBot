@@ -5,8 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RiBot.Models;
 
-namespace RiBot
+namespace RiBot.General
 {
     /// <summary>
     /// The class that will handle any messages sent to the bot in dm

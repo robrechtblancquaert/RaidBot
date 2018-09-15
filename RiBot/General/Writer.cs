@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace RiBot
+namespace RiBot.General
 {
     /// <summary>
     /// Handles writing to console

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RiBot
+namespace RiBot.General
 {
     /// <summary>
     /// Provides several methods often used in handlers

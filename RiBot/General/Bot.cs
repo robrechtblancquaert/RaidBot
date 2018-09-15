@@ -6,8 +6,9 @@ using System.Linq;
 using System.Timers;
 using System.Threading.Tasks;
 using RiBot.Channel;
+using RiBot.Models;
 
-namespace RiBot
+namespace RiBot.General
 {
     /// <summary>
     /// Main class, handles start up
@@ -24,20 +25,29 @@ namespace RiBot
         private static bool HasReset = false;
 
         /// <summary>
-        /// Main method of the program, configures the discord client
+        /// Main method of the program, runs indefinetly
         /// </summary>
         /// <returns>Does not return, runs indefinetly</returns>
         public async Task Run()
         {
-            Writer.Log("starting discord client configuration");
+            Writer.Log("starting discord RaidBot client");
 
             // Initialise the config file and the discord client
             Client = new DiscordSocketClient();
             Config.Instance.Read();
             Config.Instance.Write();
-            
 
-#if ! DEBUG
+            await this.Client_Setup();
+
+            await Task.Delay(-1);
+        }
+
+        /// <summary>
+        /// Setup the client and assign methods
+        /// </summary>
+        public async Task Client_Setup()
+        {
+#if !DEBUG
             await Client.LoginAsync(TokenType.Bot, Config.Instance.General.ReleaseBotKey ); // RELEASE
 #else
             await Client.LoginAsync(TokenType.Bot, Config.Instance.General.TestBotKey); // TEST
@@ -46,6 +56,8 @@ namespace RiBot
 
             // Call method to configure client once it is ready
             Client.Ready += Client_Ready;
+
+            Client.Disconnected += Client_Disconected;
 
             // Handle incoming messages
             DmHandler dmHandler = new DmHandler();
@@ -72,8 +84,6 @@ namespace RiBot
             CleanTimer.Elapsed += OnCleanEvent;
             CleanTimer.AutoReset = true;
             CleanTimer.Enabled = true;
-
-            await Task.Delay(-1);
         }
 
         /// <summary>
@@ -96,6 +106,45 @@ namespace RiBot
             }
 
             Config.Instance.Write();
+        }
+
+        /// <summary>
+        /// Handles a loss of connection with the client
+        /// </summary>
+        /// <param name="exception">Exception given on disconnection</param>
+        private async Task Client_Disconected(Exception exception)
+        {
+            Writer.Log($"Client disconnected: {exception.Message}");
+
+            // Dispose of used resources
+            ChannelHandlers.Clear();
+            CleanTimer.Dispose();
+            try
+            {
+                Client.Dispose();
+            }
+            catch(Exception e)
+            {
+                Writer.Log("Could no dispose of client.");
+            }
+
+            // Try to reconnect
+            bool disconnected = true;
+            while(disconnected)
+            {
+                try
+                {
+                    await this.Client_Setup();
+                    disconnected = false;
+                }
+                catch (Exception e)
+                {
+                    Writer.Log("Could not start client.");
+                }
+                await Task.Delay(TimeSpan.FromSeconds(10).Milliseconds);
+            }
+
+            return;
         }
 
         /// <summary>
@@ -185,7 +234,6 @@ namespace RiBot
 
             return true;
         }
-
 
         /// <summary>
         /// Clean up a channel

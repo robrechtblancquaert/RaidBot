@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace RiBot
+namespace RiBot.Models
 {
     /// <summary>
     /// The configuration of a specific channel in discord

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace RiBot
+namespace RiBot.General
 {
     public class Command
     {

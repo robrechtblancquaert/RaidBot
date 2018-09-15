@@ -4,7 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
-using RiBot;
+using RiBot.General;
+using RiBot.Models;
 
 namespace RiBot.Channel
 {

@@ -4,8 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using RiBot.General;
 
-namespace RiBot
+namespace RiBot.Models
 {
     /// <summary>
     /// Config class, represent a config.json file
