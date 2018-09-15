@@ -12,10 +12,16 @@ namespace RiBot.Channel
     class BorderHandler : IMessageHandler
     {
         public CommandType MessageType { get; } = CommandType.Border;
+        public ChannelConfig ChannelConfig { get; }
         public List<string> AcceptedCommands { get; } = new List<string> { "!border", "!reset" };
 
         // List of possible values for border
         private List<string> BorderColours { get; } = new List<string> { "Blue", "Red", "Green", "None", "OS", "EotM" };
+
+        public BorderHandler(ChannelConfig channelConfig)
+        {
+            this.ChannelConfig = channelConfig;
+        }
 
         public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {

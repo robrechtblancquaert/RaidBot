@@ -13,11 +13,17 @@ namespace RiBot.Channel
     class ScheduleHandler : IMessageHandler
     {
         public CommandType MessageType { get; } = CommandType.Schedule;
+        public ChannelConfig ChannelConfig { get; }
 
         public List<string> AcceptedCommands { get; } = new List<string> { "!schedule", "!daily" };
 
         // A weekly schedule represented by a dict, key: day, value: time of day
         private Dictionary<DayOfWeek, TimeSpan> Schedule = new Dictionary<DayOfWeek, TimeSpan>();
+
+        public ScheduleHandler(ChannelConfig channelConfig)
+        {
+            this.ChannelConfig = channelConfig;
+        }
 
         public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised)
         {
@@ -25,17 +31,12 @@ namespace RiBot.Channel
             if (!isAuthorised) return postedMessage;
 
             // Get the current schedule from the config file
-            var configSchedule = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Schedule;
-            this.Schedule = configSchedule ?? new Dictionary<DayOfWeek, TimeSpan>();
-            
+            this.Schedule = ChannelConfig.ChannelData.Schedule;
+
             HandleCommand(command);
 
             // Post the message
             await MessageHelper.UpdateMessage(postedMessage, FormMessage());
-
-            // Update the config file
-            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Schedule = Schedule;
-            Config.Instance.Write();
 
             return postedMessage;
         }
@@ -63,7 +64,7 @@ namespace RiBot.Channel
         /// <param name="command">A string containing Arguments to set the schedule</param>
         private void CreateSchedule(Command command)
         {
-            if (command.MessageRest.Length > 0) return;
+            if (command.MessageRest.Length == 0) return;
             if(command.MessageRest == "reset")
             {
                 Schedule = new Dictionary<DayOfWeek, TimeSpan>();
@@ -73,7 +74,7 @@ namespace RiBot.Channel
             var arguments = Argument.InString(command.MessageRest);
             foreach (var argument in arguments)
             {
-                List<DayOfWeek> posDays = MessageHelper.PossibleValues<DayOfWeek>(command.MessageRest);
+                List<DayOfWeek> posDays = MessageHelper.PossibleValues<DayOfWeek>(argument.Key);
 
                 // If more than one day is found ignore this command
                 if (posDays.Count == 1)
@@ -133,7 +134,7 @@ namespace RiBot.Channel
             {
                 if(Schedule.Keys.Contains(en))
                 {
-                    message += $"|{Schedule[en].Hours + ":" + Schedule[en].Minutes.ToString("D2")}";
+                    message += $"|{Schedule[en].Hours.ToString("D2") + ":" + Schedule[en].Minutes.ToString("D2")}";
                 } else
                 {
                     message += "|     ";

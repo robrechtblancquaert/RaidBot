@@ -11,7 +11,14 @@ namespace RiBot.Channel
     class WelcomeHandler : IMessageHandler
     {
         public CommandType MessageType { get; } = CommandType.Welcome;
+        public ChannelConfig ChannelConfig { get; }
+
         public List<string> AcceptedCommands { get; } = new List<string> { "!welcome" };
+
+        public WelcomeHandler(ChannelConfig channelConfig)
+        {
+            this.ChannelConfig = channelConfig;
+        }
 
         public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {

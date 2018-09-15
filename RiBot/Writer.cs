@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace RiBot.General
+namespace RiBot
 {
     /// <summary>
     /// Handles writing to console
@@ -19,7 +19,7 @@ namespace RiBot.General
         public static void Initialise()
         {
             System.IO.Directory.CreateDirectory("logs");
-            LogFile = "log-" + DateTime.Now.ToLocalTime().ToString("d-M-yyyy", CultureInfo.CreateSpecificCulture("nl-BE"));
+            LogFile = "log-" + DateTime.Now.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.CreateSpecificCulture("nl-BE"));
     }
 
         /// <summary>

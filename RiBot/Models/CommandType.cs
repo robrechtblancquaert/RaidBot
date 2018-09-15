@@ -4,7 +4,7 @@ using System.Text;
 using RiBot.General;
 using RiBot.Models;
 
-namespace RiBot.Channel
+namespace RiBot.Models
 {
     /// <summary>
     /// The different types of commands a ahndler can be responsible for

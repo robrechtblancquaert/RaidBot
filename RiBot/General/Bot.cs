@@ -67,7 +67,8 @@ namespace RiBot.General
                 if (handler != null)
                 {
                     if (message.Author.Id != Client.CurrentUser.Id) Writer.Log("received message from " + message.Author + ": " + message.Content);
-                    handler.Handle(Command.FormCommand(message));
+                    await handler.Handle(Command.FormCommand(message));
+                    Config.Instance.Write();
                 }
                 else
                 {
@@ -103,6 +104,7 @@ namespace RiBot.General
             foreach (var channelconfig in toRemove)
             {
                 Config.Instance.ChannelConfigs.RemoveAll(x => x.ChannelId == channelconfig.ChannelId);
+                Config.Instance.General.ChannelIds.RemoveAll(x => x == channelconfig.ChannelId);
             }
 
             Config.Instance.Write();
@@ -115,35 +117,6 @@ namespace RiBot.General
         private async Task Client_Disconected(Exception exception)
         {
             Writer.Log($"Client disconnected: {exception.Message}");
-
-            // Dispose of used resources
-            ChannelHandlers.Clear();
-            CleanTimer.Dispose();
-            try
-            {
-                Client.Dispose();
-            }
-            catch(Exception e)
-            {
-                Writer.Log("Could no dispose of client.");
-            }
-
-            // Try to reconnect
-            bool disconnected = true;
-            while(disconnected)
-            {
-                try
-                {
-                    await this.Client_Setup();
-                    disconnected = false;
-                }
-                catch (Exception e)
-                {
-                    Writer.Log("Could not start client.");
-                }
-                await Task.Delay(TimeSpan.FromSeconds(10).Milliseconds);
-            }
-
             return;
         }
 
@@ -155,15 +128,6 @@ namespace RiBot.General
         /// <returns>A bool depicting if the channel handler could be started</returns>
         public async static Task<bool> StartChannelHandler(ChannelConfig channelconfig, IMessageChannel channel = null)
         {
-            // Create a handler for each type of message the channel should be able to process
-            var handlers = new List<IMessageHandler>
-            {
-                new WelcomeHandler(),
-                new AttendanceHandler(),
-                new BorderHandler(),
-                new ScheduleHandler(),
-                new AnnouncementHandler()
-            };
 
             // Try to get the channel object from  the channel id in the config
             if(channel == null)
@@ -175,8 +139,18 @@ namespace RiBot.General
                 channelconfig = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channel.Id).Single();
             }
 
+            // Create a handler for each type of message the channel should be able to process
+            var handlers = new List<IMessageHandler>
+            {
+                new WelcomeHandler(channelconfig),
+                new AttendanceHandler(channelconfig),
+                new BorderHandler(channelconfig),
+                new ScheduleHandler(channelconfig),
+                new AnnouncementHandler(channelconfig)
+            };
+
             // If the client couldn't get the channel, return false
-            if(channel == null)
+            if (channel == null)
             {
                 Config.Instance.DeleteConfig(channelconfig);
             }
@@ -207,7 +181,7 @@ namespace RiBot.General
             }
             foreach (var type in toRemove)
             {
-                Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channelconfig.ChannelId).Single().ChannelData.PostedMessages.Remove(type);
+                channelconfig.ChannelData.PostedMessages.Remove(type);
             }
             Config.Instance.Write();
 
@@ -220,7 +194,7 @@ namespace RiBot.General
                     {
                         IUserMessage userMessage = await channel.SendMessageAsync(h.DefaultMessage());
                         postedMessages.Add(h.MessageType, userMessage);
-                        Config.Instance.ChannelConfigs.Where(x => x.ChannelId == channelconfig.ChannelId).Single().ChannelData.PostedMessages.Add(h.MessageType, userMessage.Id);
+                        channelconfig.ChannelData.PostedMessages.Add(h.MessageType, userMessage.Id);
                     }
                 }
                 catch (Exception) { }
@@ -228,7 +202,7 @@ namespace RiBot.General
             Config.Instance.Write();
 
             // Start a channel handler
-            Channel.ChannelHandler handler = new Channel.ChannelHandler(Client.CurrentUser.Id, channel, handlers, postedMessages);
+            ChannelHandler handler = new ChannelHandler(Client.CurrentUser.Id, channel, handlers, postedMessages);
             ChannelHandlers.Add(handler);
             await Task.Run(() => handler.Run());
 

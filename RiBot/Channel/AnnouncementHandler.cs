@@ -12,8 +12,14 @@ namespace RiBot.Channel
     class AnnouncementHandler : IMessageHandler
     {
         public CommandType MessageType { get; } = CommandType.Announcement;
+        public ChannelConfig ChannelConfig { get; }
 
         public List<string> AcceptedCommands { get; } = new List<string> { "!announce" };
+
+        public AnnouncementHandler(ChannelConfig channelConfig)
+        {
+            this.ChannelConfig = channelConfig;
+        }
 
         public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {
@@ -48,9 +54,8 @@ namespace RiBot.Channel
             }
 
             // Post the announcement and add it to the config, with an expiration date
-            var postedAnnouncement = command.Channel.SendMessageAsync(announcement).Result;
-            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Announcements.Add((ulong)postedAnnouncement.Id, expiresOn);
-            Config.Instance.Write();
+            var postedAnnouncement = command.Channel.SendMessageAsync("|\t" + announcement).Result;
+            ChannelConfig.ChannelData.Announcements.Add((ulong)postedAnnouncement.Id, expiresOn);
 
             return postedMessage;
         }

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using RiBot.General;
 
 namespace RiBot.Models
 {
@@ -70,16 +69,24 @@ namespace RiBot.Models
                 this.General = general;
                 foreach(var id in General.ChannelIds)
                 {
-                    string configPath = $"data/channel-{id}/config.json";
-                    string configJson = System.IO.File.ReadAllText(configPath);
-                    ChannelConfig channelConfig = JsonConvert.DeserializeObject<ChannelConfig>(configJson);
+                    try
+                    {
+                        string configPath = $"data/channel-{id}/config.json";
+                        string configJson = System.IO.File.ReadAllText(configPath);
+                        ChannelConfig channelConfig = JsonConvert.DeserializeObject<ChannelConfig>(configJson);
 
-                    string dataPath = $"data/channel-{id}/data.json";
-                    string dataJson = System.IO.File.ReadAllText(dataPath);
-                    ChannelData channelData = JsonConvert.DeserializeObject<ChannelData>(dataJson);
+                        string dataPath = $"data/channel-{id}/data.json";
+                        string dataJson = System.IO.File.ReadAllText(dataPath);
+                        ChannelData channelData = JsonConvert.DeserializeObject<ChannelData>(dataJson);
 
-                    channelConfig.ChannelData = channelData;
-                    this.ChannelConfigs.Add(channelConfig);
+                        channelConfig.ChannelData = channelData;
+                        this.ChannelConfigs.Add(channelConfig);
+                    }
+                    catch (Exception e)
+                    {
+                        this.General.ChannelIds.RemoveAll(x => x == id);
+                    }
+                    
                 }
             }
             catch (Exception) {

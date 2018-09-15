@@ -20,6 +20,11 @@ namespace RiBot.Channel
         CommandType MessageType { get; }
 
         /// <summary>
+        /// The data context
+        /// </summary>
+        ChannelConfig ChannelConfig { get; }
+
+        /// <summary>
         /// The commands this class accepts
         /// </summary>
         List<string> AcceptedCommands { get; }

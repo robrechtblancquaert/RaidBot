@@ -19,6 +19,7 @@ namespace RiBot.Channel
         public IDictionary<CommandType, IUserMessage> PostedMessages { get; set; }
         public List<IMessageHandler> MessageHandlers { get; set; }
         private ulong BotId { get; }
+        private ChannelConfig ChannelConfig { get; }
 
         /// <summary>
         /// Create a ChannelHandler
@@ -33,17 +34,18 @@ namespace RiBot.Channel
             this.Channel = channel;
             this.MessageHandlers = messageHandlers;
             this.PostedMessages = (postedMessages != null) ? postedMessages : new Dictionary<CommandType, IUserMessage>();
+            this.ChannelConfig = Config.Instance.GetChannelConfig(channel);
         }
 
         /// <summary>
         /// Use this method to clear any unhandled messages in the channel
         /// </summary>
-        public async void Run()
+        public async Task Run()
         {
             var messages = await Channel.GetMessagesAsync().Flatten();
             foreach (var m in messages)
             {
-                Handle(Command.FormCommand(m));
+                await Handle(Command.FormCommand(m));
             }
 
         }
@@ -52,10 +54,10 @@ namespace RiBot.Channel
         /// Handle a message
         /// </summary>
         /// <param name="m">The message to handle</param>
-        public async void Handle(Command command)
+        public async Task Handle(Command command)
         {
             // Is the author authorised in this channel
-            bool authorised = Config.Instance.GetChannelConfig(this.Channel).AuthUsersIds.Contains(command.Author.Id) || (command.Author.Id == this.BotId);
+            bool authorised = ChannelConfig.AuthUsersIds.Contains(command.Author.Id) || (command.Author.Id == this.BotId);
 
             // Do not handle the message if it is from the bot itself, unless it is a request to reset
             if (command.Author.Id != BotId || command.FirstWord == "!reset" || command.FirstWord == "!daily")
@@ -77,8 +79,7 @@ namespace RiBot.Channel
                 {
                     forConfig.Add(x.Key, x.Value.Id);
                 }
-                Config.Instance.ChannelConfigs.Where(x => x.ChannelId == Channel.Id).Single().ChannelData.PostedMessages = forConfig;
-                Config.Instance.Write();
+                ChannelConfig.ChannelData.PostedMessages = forConfig;
 
                 // Delete the message after it has been handled
                 List<IMessage> toDelete = new List<IMessage>

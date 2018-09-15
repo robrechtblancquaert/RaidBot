@@ -9,37 +9,35 @@ using RiBot.Models;
 
 namespace RiBot.Channel
 {
-    public enum Class { Guardian, Revenant, Warrior, Engineer, Ranger, Thief, Elementalist, Mesmer, Necromancer, None }
     class AttendanceHandler : IMessageHandler
     {
         public CommandType MessageType { get; } = CommandType.Attending;
+        public ChannelConfig ChannelConfig { get; }
         public List<string> AcceptedCommands { get; } = new List<string> { "x", "!x", "!reset", "!roster" };
 
-        // Dict of people attending the next raid, key: username, value; chosen class
-        private Dictionary<string, Class> Usernames { get; set; }
+        // Dict of people attending the next raid, key: username, value: chosen class
+        private Dictionary<string, string> Usernames { get; set; }
 
         // Dict of the ammount of people wanted per class
-        private Dictionary<Class, int> Roster { get; set; }
+        private Dictionary<string, int> Roster { get; set; }
+
+        public AttendanceHandler(ChannelConfig channelConfig)
+        {
+            this.ChannelConfig = channelConfig;
+        }
 
         public async Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false)
         {
             // Get the current attending users from the config file
-            var configUsernames = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Usernames;
-            this.Usernames = configUsernames ?? new Dictionary<string, Class>();
+            this.Usernames = ChannelConfig.ChannelData.Usernames;
 
             // Get the curent roster from the config file
-            var configRoster = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Roster;
-            this.Roster = configRoster ?? new Dictionary<Class, int>();
+            this.Roster = ChannelConfig.ChannelData.Roster;
 
             HandleCommand(command, isAuthorised);
 
             // Post the message
             await MessageHelper.UpdateMessage(postedMessage, FormMessage());
-
-            // Update the config file
-            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Usernames = Usernames;
-            Config.Instance.ChannelConfigs.Where(x => x.ChannelId == command.Channel.Id).Single().ChannelData.Roster = Roster;
-            Config.Instance.Write();
 
             return postedMessage;
         }
@@ -75,11 +73,13 @@ namespace RiBot.Channel
         /// <param name="command">The command containing the relevant information</param>
         private void AddUsername(Command command)
         {
+            List<string> classes = ChannelConfig.ClassTypes;
+
             if (command.MessageRest.Length == 0) {
-                Usernames[command.Author.Username] = Class.None;
+                Usernames[command.Author.Username] = classes.Last();
                 return;
             }
-            List<Class> posClasses = MessageHelper.PossibleValues<Class>(command.MessageRest);
+            List<string> posClasses = MessageHelper.PossibleValues(classes, command.MessageRest);
 
             // If more than one class is found that matches the command, assign class 'none'
             if(posClasses.Count == 1)
@@ -87,7 +87,7 @@ namespace RiBot.Channel
                 Usernames[command.Author.Username] = posClasses[0];
             } else
             {
-                Usernames[command.Author.Username] = Class.None;
+                Usernames[command.Author.Username] = classes.Last();
             }
         }
 
@@ -98,10 +98,13 @@ namespace RiBot.Channel
         private void CreateRoster(Command command)
         {
             if (command.MessageRest.Length == 0) return;
+
+            List<string> classes = ChannelConfig.ClassTypes;
+
             var arguments = Argument.InString(command.MessageRest);
             foreach(var argument in arguments)
             {
-                List<Class> posClasses = MessageHelper.PossibleValues<Class>(argument.Key);
+                List<string> posClasses = MessageHelper.PossibleValues(classes, argument.Key);
                 // If more than one class is found ignore this command
                 if (posClasses.Count == 1)
                 {
@@ -128,7 +131,9 @@ namespace RiBot.Channel
         {
             string message = $"• Attending next raid [{Usernames.Count}]:\n";
 
-            foreach (var classVal in (Class[])Enum.GetValues(typeof(Class)))
+            List<string> classes = ChannelConfig.ClassTypes;
+
+            foreach (var classVal in classes)
             {
                 var myClass = Usernames.Where(x => x.Value == classVal);
                 if (!Roster.ContainsKey(classVal)) Roster[classVal] = 0;
