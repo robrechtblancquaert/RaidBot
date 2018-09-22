@@ -8,7 +8,7 @@ using Discord;
 using RiBot.General;
 using RiBot.Models;
 
-namespace RiBot.Channel
+namespace RiBot.Channel.Handlers
 {
     class ScheduleHandler : IMessageHandler
     {

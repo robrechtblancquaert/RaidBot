@@ -1,18 +1,16 @@
-﻿using Discord;
+﻿using RiBot.General;
+using RiBot.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using RiBot.General;
-using RiBot.Models;
 
-namespace RiBot.Channel
+namespace RiBot.Channel.Services
 {
     /// <summary>
-    /// Handles a specific type of message
+    /// Processes a specific type of message, but is not responsible for a message posted by the bot
     /// </summary>
-    public interface IMessageHandler
+    interface IMessageService
     {
         /// <summary>
         /// The type this class is responisble for
@@ -30,18 +28,10 @@ namespace RiBot.Channel
         List<string> AcceptedCommands { get; }
 
         /// <summary>
-        /// Handle a command
+        /// Provide a service as a response to a command
         /// </summary>
-        /// <param name="message">The current message posted by this class in  the channel</param>
         /// <param name="command">The message received by the bot, stored in command object</param>
         /// <param name="isAuthorised">True if user is authorised in the channel, false otherwise</param>
-        /// <returns>An updated message posted in the channel</returns>
-        Task<IUserMessage> Handle(IUserMessage postedMessage, Command command, bool isAuthorised = false);
-
-        /// <summary>
-        /// Creates a default message, to be posted in the channel if there is no current posted message
-        /// </summary>
-        /// <returns>The default message</returns>
-        string DefaultMessage();
+        Task Service(Command command, bool isAuthorised = false);
     }
 }

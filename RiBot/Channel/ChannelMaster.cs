@@ -7,19 +7,23 @@ using System.Text;
 using System.Threading.Tasks;
 using RiBot.General;
 using RiBot.Models;
+using RiBot.Channel.Handlers;
 
 namespace RiBot.Channel
 {
     /// <summary>
-    /// Handlers messages for a specific channel
+    /// Processes messages for a specific channel
     /// </summary>
-    public class ChannelHandler
+    public class ChannelMaster
     {
         public IMessageChannel Channel { get; }
         public IDictionary<CommandType, IUserMessage> PostedMessages { get; set; }
         public List<IMessageHandler> MessageHandlers { get; set; }
         private ulong BotId { get; }
         private ChannelConfig ChannelConfig { get; }
+
+        // List of commands the itself bot can call
+        private static List<string> BotCommandsWhitelist { get; } = new List<string> { "!reset", "!daily" };
 
         /// <summary>
         /// Create a ChannelHandler
@@ -28,12 +32,12 @@ namespace RiBot.Channel
         /// <param name="channel">The channel this class should handle</param>
         /// <param name="messageHandlers">A list of all the handlers for messages this channel can receive</param>
         /// <param name="postedMessages">A list of all the messages that have been posted to this channel</param>
-        public ChannelHandler(ulong botId, IMessageChannel channel, List<IMessageHandler> messageHandlers, IDictionary<CommandType, IUserMessage> postedMessages = null)
+        public ChannelMaster(ulong botId, IMessageChannel channel, List<IMessageHandler> messageHandlers, IDictionary<CommandType, IUserMessage> postedMessages = null)
         {
             this.BotId = botId;
             this.Channel = channel;
             this.MessageHandlers = messageHandlers;
-            this.PostedMessages = (postedMessages != null) ? postedMessages : new Dictionary<CommandType, IUserMessage>();
+            this.PostedMessages = postedMessages ?? new Dictionary<CommandType, IUserMessage>();
             this.ChannelConfig = Config.Instance.GetChannelConfig(channel);
         }
 
@@ -45,22 +49,22 @@ namespace RiBot.Channel
             var messages = await Channel.GetMessagesAsync().Flatten();
             foreach (var m in messages)
             {
-                await Handle(Command.FormCommand(m));
+                await Process(Command.FormCommand(m));
             }
 
         }
 
         /// <summary>
-        /// Handle a message
+        /// Processes a message
         /// </summary>
         /// <param name="m">The message to handle</param>
-        public async Task Handle(Command command)
+        public async Task Process(Command command)
         {
             // Is the author authorised in this channel
             bool authorised = ChannelConfig.AuthUsersIds.Contains(command.Author.Id) || (command.Author.Id == this.BotId);
 
-            // Do not handle the message if it is from the bot itself, unless it is a request to reset
-            if (command.Author.Id != BotId || command.FirstWord == "!reset" || command.FirstWord == "!daily")
+            // Do not process the message if it is from the bot itself, unless it is a request to reset
+            if (command.Author.Id != BotId || BotCommandsWhitelist.Contains(command.FirstWord))
             {
                 // Let each handler handle the received command
                 foreach (var handler in MessageHandlers)

@@ -7,6 +7,7 @@ using System.Timers;
 using System.Threading.Tasks;
 using RiBot.Channel;
 using RiBot.Models;
+using RiBot.Channel.Handlers;
 
 namespace RiBot.General
 {
@@ -17,8 +18,8 @@ namespace RiBot.General
     {
         // The client of discord
         public static DiscordSocketClient Client { get; set; }
-        // A list of each of the channel handlers this class has started
-        private static List<ChannelHandler> ChannelHandlers = new List<ChannelHandler>();
+        // A list of each of the channel masters this class has started
+        private static List<ChannelMaster> ChannelMasters = new List<ChannelMaster>();
         // A timer to periodically clean all channels up
         private static Timer CleanTimer;
         // Boolean to indicate if the daily reset has run
@@ -36,7 +37,7 @@ namespace RiBot.General
             Client = new DiscordSocketClient();
             Config.Instance.Read();
             Config.Instance.Write();
-
+            
             await this.Client_Setup();
 
             await Task.Delay(-1);
@@ -63,11 +64,11 @@ namespace RiBot.General
             DmHandler dmHandler = new DmHandler();
             Client.MessageReceived += async message =>
             {
-                var handler = ChannelHandlers.Where(x => x.Channel.Id == message.Channel.Id).SingleOrDefault();
-                if (handler != null)
+                ChannelMaster master = ChannelMasters.Where(x => x.Channel.Id == message.Channel.Id).SingleOrDefault();
+                if (master != null)
                 {
                     if (message.Author.Id != Client.CurrentUser.Id) Writer.Log("received message from " + message.Author + ": " + message.Content);
-                    await handler.Handle(Command.FormCommand(message));
+                    await master.Process(Command.FormCommand(message));
                     Config.Instance.Write();
                 }
                 else
@@ -88,15 +89,15 @@ namespace RiBot.General
         }
 
         /// <summary>
-        /// Starts a channel handler for each channel in the config, removes channels it can't access from config.
+        /// Starts a channel master for each channel in the config, removes channel masters it can't access from config.
         /// </summary>
         private async Task Client_Ready()
         {
             List<ChannelConfig> toRemove = new List<ChannelConfig>();
             foreach (var channelconfig in Config.Instance.ChannelConfigs)
             {
-                Writer.Log("started channel handler for channel with id: " + channelconfig.ChannelId);
-                if (!(await StartChannelHandler(channelconfig)))
+                Writer.Log("started channel master for channel with id: " + channelconfig.ChannelId);
+                if (!(await StartChannelMaster(channelconfig)))
                 {
                     toRemove.Add(channelconfig);
                 }
@@ -121,12 +122,12 @@ namespace RiBot.General
         }
 
         /// <summary>
-        /// Start a channel handler for a specific channel in discord
+        /// Start a channel master for a specific channel in discord
         /// </summary>
         /// <param name="channelconfig">The representation of a channel in discord</param>
-        /// <param name="channel">If you already have an instanc eof the channel to handle you can pass it as a parameter</param>
+        /// <param name="channel">If you already have an instance of the channel master, you can pass it as a parameter</param>
         /// <returns>A bool depicting if the channel handler could be started</returns>
-        public async static Task<bool> StartChannelHandler(ChannelConfig channelconfig, IMessageChannel channel = null)
+        public async static Task<bool> StartChannelMaster(ChannelConfig channelconfig, IMessageChannel channel = null)
         {
 
             // Try to get the channel object from  the channel id in the config
@@ -202,9 +203,9 @@ namespace RiBot.General
             Config.Instance.Write();
 
             // Start a channel handler
-            ChannelHandler handler = new ChannelHandler(Client.CurrentUser.Id, channel, handlers, postedMessages);
-            ChannelHandlers.Add(handler);
-            await Task.Run(() => handler.Run());
+            ChannelMaster master = new ChannelMaster(Client.CurrentUser.Id, channel, handlers, postedMessages);
+            ChannelMasters.Add(master);
+            await Task.Run(() => master.Run());
 
             return true;
         }
@@ -267,23 +268,23 @@ namespace RiBot.General
             if(DateTime.Now.ToLocalTime().Hour == 1 && !HasReset)
             {
                 Writer.Log("resetting channel");
-                foreach (var handler in ChannelHandlers)
+                foreach (var master in ChannelMasters)
                 {
                     try
                     {
                         // Only reset attendance if there has been a raid
-                        var raidDays = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == handler.Channel.Id).Single().ChannelData.Schedule.Keys.ToArray();
+                        var raidDays = Config.Instance.ChannelConfigs.Where(x => x.ChannelId == master.Channel.Id).Single().ChannelData.Schedule.Keys.ToArray();
                         DayOfWeek yesterday = DateTime.Now.AddDays(-1).DayOfWeek;
                         if (raidDays.Contains(yesterday))
                         {
-                            handler.Channel.SendMessageAsync("!reset");
+                            master.Channel.SendMessageAsync("!reset");
                         }
                     }
                     catch (Exception) { }
                     
 
-                    // Message that reset has passed for handlers that need it
-                    handler.Channel.SendMessageAsync("!daily");
+                    // Message that reset has passed for masters that need it
+                    master.Channel.SendMessageAsync("!daily");
                 } 
 
                 HasReset = true;

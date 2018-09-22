@@ -184,7 +184,7 @@ Optionally you can add `{time}` anywhere in the message in the format of `[time:
             Config.Instance.General.ChannelIds.Add(channel.Id);
             Config.Instance.ChannelConfigs.Add(channelconfig);
             Config.Instance.Write();
-            await Bot.StartChannelHandler(null, channel);
+            await Bot.StartChannelMaster(null, channel);
         }
     }
 }

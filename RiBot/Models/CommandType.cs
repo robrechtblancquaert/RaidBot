@@ -7,7 +7,7 @@ using RiBot.Models;
 namespace RiBot.Models
 {
     /// <summary>
-    /// The different types of commands a ahndler can be responsible for
+    /// The different types of commands a handler can be responsible for
     /// </summary>
-    public enum CommandType { Welcome, Attending, Border, Announcement, Schedule }
+    public enum CommandType { Welcome, Attending, Border, Announcement, Schedule, Config }
 }
